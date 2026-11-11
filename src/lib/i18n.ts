@@ -5,7 +5,17 @@ const nf0 = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 
 export const n1 = (x: number) => nf.format(x);
 export const n0 = (x: number) => nf0.format(x);
-export const pct = (x: number) => `${nf0.format(x * 100)}%`;
+// Russian noun form for a count: one, few (2–4), many.
+const ruForm = (x: number, one: string, few: string, many: string) => {
+  const n = Math.abs(Math.round(x)) % 100;
+  const d = n % 10;
+  if (n >= 11 && n <= 14) return many;
+  if (d === 1) return one;
+  if (d >= 2 && d <= 4) return few;
+  return many;
+};
+const ruCount = (x: number, one: string, few: string, many: string) => `${n0(x)} ${ruForm(x, one, few, many)}`;
+export const pct = (x: number) =>`${nf0.format(x * 100)}%`;
 export const signed = (x: number) => `${x > 0 ? '+' : x < 0 ? '−' : ''}${nf.format(Math.abs(x))}`;
 export const signed0 = (x: number) => `${x > 0 ? '+' : x < 0 ? '−' : ''}${nf0.format(Math.abs(x))}`;
 
@@ -28,7 +38,8 @@ const ru = {
   demoBanner: 'Демонстрационные данные: школы, ученики и учебники вымышлены.',
   demoUpload: 'Загрузить свои результаты',
   uploadBanner: (name: string) => `Анализ файла: ${name}. Данные хранятся только в этом браузере.`,
-  scope: (s: number, c: number, st: number) => `${n0(s)} школ, ${n0(c)} классов, ${n0(st)} учеников`,
+  scope: (s: number, c: number, st: number) => 
+    `${ruCount(s, 'школа', 'школы', 'школ')}, ${ruCount(c, 'класс', 'класса', 'классов')}, ${ruCount(st, 'ученик', 'ученика', 'учеников')}`,
   points: 'балла',
   hoursShort: 'ч',
 
