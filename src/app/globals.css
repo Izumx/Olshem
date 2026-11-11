@@ -16,8 +16,8 @@
   --cell: 24px;
   --margin: 216px;
   --gutter: 24px;
-  --sans: var(--font-golos), 'Segoe UI', system-ui, sans-serif;
-  --hand: var(--font-caveat), 'Segoe Print', cursive;
+  --sans: 'Golos Text Variable', 'Segoe UI', system-ui, sans-serif;
+  --hand: 'Caveat Variable', 'Segoe Print', cursive;
 }
 
 * { box-sizing: border-box; }

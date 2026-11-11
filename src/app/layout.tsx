@@ -1,22 +1,11 @@
 import type { Metadata } from 'next';
-import { Caveat, Golos_Text } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { AppProvider } from '@/components/AppProvider';
 import { Shell } from '@/components/Shell';
+// Fonts ship inside the build, so it works without internet at the venue.
+import '@fontsource-variable/golos-text';
+import '@fontsource-variable/caveat';
 import './globals.css';
-
-const golos = Golos_Text({
-  subsets: ['latin', 'cyrillic', 'cyrillic-ext'],
-  variable: '--font-golos',
-  display: 'swap',
-});
-
-const caveat = Caveat({
-  subsets: ['latin', 'cyrillic', 'cyrillic-ext'],
-  weight: ['500', '600'],
-  variable: '--font-caveat',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'Өлшем: решения об учебниках и часах',
@@ -25,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${golos.variable} ${caveat.variable}`}>
+    <html lang="ru">
       <body>
         <AppProvider>
           <Shell>{children}</Shell>
