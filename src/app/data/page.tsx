@@ -7,6 +7,8 @@ import { Ruled } from '@/components/Shell';
 import { datasetToCsv, download, OPTIONAL, parseDelimited, REQUIRED, tableToDataset, type Field, type ImportReport } from '@/lib/data/import';
 import { generateDemo } from '@/lib/demo/generate';
 
+const SAMPLES = ['1-normalnyy.xlsx', '2-bez-vhodnogo-balla.xlsx', '3-s-oshibkami-kz.xlsx'] as const;
+
 async function readTable(file: File): Promise<string[][]> {
   if (/\.xlsx$/i.test(file.name)) {
     const { default: readXlsx } = await import('read-excel-file/browser');
@@ -50,6 +52,20 @@ export default function DataPage() {
     }
   };
 
+  const [loading, setLoading] = useState<string | null>(null);
+  const trySample = async (file: string) => {
+    setLoading(file);
+    try {
+      const res = await fetch(`/primery/${file}`);
+      if (!res.ok) throw new Error(String(res.status));
+      await handle(new File([await res.blob()], file));
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(null);
+    }
+  };
+
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDrag(false);
@@ -84,6 +100,7 @@ export default function DataPage() {
           <span className="btn" style={{ marginTop: 12 }}>{m.choose}</span>
         </label>
         <div className="btn-row" style={{ marginTop: 12 }}>
+          <a className="btn ghost" href="/shablon-olshem.xlsx" download>{m.template}</a>
           <button type="button" className="btn ghost" onClick={() => download('primer-rezultatov.csv', datasetToCsv(generateDemo()))}>{m.sample}</button>
           {dataset.source === 'upload' && (
             <button
@@ -94,6 +111,18 @@ export default function DataPage() {
               {m.backDemo}
             </button>
           )}
+        </div>
+      </Ruled>
+
+      <Ruled>
+        <h2 className="section-title">{m.tryTitle}</h2>
+        <p className="small" style={{ marginBottom: 12 }}>{m.tryLead}</p>
+        <div className="btn-row">
+          {SAMPLES.map((file, i) => (
+            <button key={file} type="button" className="btn ghost" disabled={loading !== null} onClick={() => void trySample(file)}>
+              {loading === file ? m.loading : m.tryFiles[i]}
+            </button>
+          ))}
         </div>
       </Ruled>
 
