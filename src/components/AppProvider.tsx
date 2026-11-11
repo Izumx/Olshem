@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { analyze } from '@/lib/engine/analyze';
-import type { Analysis, Dataset, Lang } from '@/lib/engine/types';
+import { DEFAULT_SETTINGS, type Analysis, type Dataset, type Lang } from '@/lib/engine/types';
 import { generateDemo } from '@/lib/demo/generate';
 import { loadDataset, saveDataset } from '@/lib/data/persist';
 import { bookLabel, messages, type Messages } from '@/lib/i18n';
@@ -14,17 +14,23 @@ interface AppState {
   dataset: Dataset;
   setDataset: (d: Dataset | null) => void;
   analysis: Analysis;
+  threshold: number;
+  setThreshold: (v: number) => void;
   topicName: (id: string) => string;
   book: (name: string) => string;
 }
 
 const AppContext = createContext<AppState | null>(null);
 const demo = generateDemo();
+export const THRESHOLD_MIN = 40;
+export const THRESHOLD_MAX = 90;
+const THRESHOLD_KEY = 'olshem-threshold';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('ru');
   const [uploaded, setUploaded] = useState<Dataset | null>(null);
   const [restored, setRestored] = useState(false);
+  const [threshold, setThresholdState] = useState(DEFAULT_SETTINGS.masteryThreshold);
   const dataset = uploaded ?? demo;
 
   // Bring back a file uploaded before a reload, before anything is shown,
@@ -50,6 +56,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem('olshem-lang');
       if (saved === 'kk' || saved === 'ru') setLangState(saved);
+      const level = Number(localStorage.getItem(THRESHOLD_KEY));
+      if (Number.isInteger(level) && level >= THRESHOLD_MIN && level <= THRESHOLD_MAX) setThresholdState(level);
     } catch {
       // Storage can be blocked; the default language still works.
     }
@@ -68,7 +76,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const analysis = useMemo(() => analyze(dataset), [dataset]);
+  const setThreshold = useCallback((v: number) => {
+    const level = Math.min(THRESHOLD_MAX, Math.max(THRESHOLD_MIN, Math.round(v)));
+    setThresholdState(level);
+    try {
+      localStorage.setItem(THRESHOLD_KEY, String(level));
+    } catch {
+      // The threshold still applies for this visit.
+    }
+  }, []);
+
+  const analysis = useMemo(() => analyze(dataset, { masteryThreshold: threshold }), [dataset, threshold]);
 
   const value = useMemo<AppState>(() => {
     const names = new Map(dataset.topics.map((x) => [x.id, x.name[lang]]));
@@ -79,10 +97,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dataset,
       setDataset,
       analysis,
+      threshold,
+      setThreshold,
       topicName: (id) => names.get(id) ?? id,
       book: (name) => bookLabel(name, lang),
     };
-  }, [lang, setLang, dataset, setDataset, analysis]);
+  }, [lang, setLang, dataset, setDataset, analysis, threshold, setThreshold]);
 
   return <AppContext.Provider value={value}>{restored ? children : null}</AppContext.Provider>;
 }

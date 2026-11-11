@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useApp } from '@/components/AppProvider';
+import { THRESHOLD_MAX, THRESHOLD_MIN, useApp } from '@/components/AppProvider';
 import { Ruled } from '@/components/Shell';
 import { Tip } from '@/components/Tip';
 import type { TopicResult } from '@/lib/engine/types';
@@ -11,7 +11,7 @@ const ROW = 48;
 const GUTTER = 76;
 
 export default function Topics() {
-  const { t, analysis, topicName } = useApp();
+  const { t, analysis, topicName, threshold, setThreshold } = useApp();
   const [openId, setOpenId] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const m = t.topics;
@@ -89,7 +89,15 @@ export default function Topics() {
           </div>
           <div className="legend" style={{ padding: '0 18px' }}>
             <span><i style={{ width: 10, height: 10, borderRadius: 5, background: 'var(--pen)' }} />{m.legendMean}</span>
-            <span><i style={{ width: 2, height: 14, background: 'var(--red)', opacity: 0.55 }} />{m.legendTarget(target)}</span>
+            <span>
+              <i style={{ width: 2, height: 14, background: 'var(--red)', opacity: 0.55 }} />
+              {m.legendTargetLabel}
+              <span className="step" style={{ marginLeft: 6 }}>
+                <button type="button" aria-label={m.thresholdDown} disabled={threshold <= THRESHOLD_MIN} onClick={() => setThreshold(threshold - 5)}>−</button>
+                <output aria-live="polite">{threshold}</output>
+                <button type="button" aria-label={m.thresholdUp} disabled={threshold >= THRESHOLD_MAX} onClick={() => setThreshold(threshold + 5)}>+</button>
+              </span>
+            </span>
           </div>
         </div>
       </Ruled>

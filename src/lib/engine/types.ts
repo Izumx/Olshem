@@ -217,6 +217,8 @@ export interface HoursModel {
   observedMin: number[];
   observedMax: number[];
   target: number;
+  /** Topics the methodist sees as weak: below the threshold or labelled hard/critical. */
+  weak: boolean[];
 }
 
 export interface Forecast {

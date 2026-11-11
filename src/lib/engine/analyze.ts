@@ -343,7 +343,14 @@ export function analyze(ds: Dataset, settings: Settings = DEFAULT_SETTINGS): Ana
   const edges = findDependencies(cube, settings.masteryThreshold);
   const slopes = estimateSlopes(cube);
   const topics = analyzeTopics(cube, settings, edges, slopes, textbooks);
-  const model = buildModel(cube, slopes, edges, topics.map((t) => t.mean), settings.masteryThreshold);
+  const model = buildModel(
+    cube,
+    slopes,
+    edges,
+    topics.map((t) => t.mean),
+    settings.masteryThreshold,
+    topics.map((t) => t.mean < settings.masteryThreshold || t.level === 'hard' || t.level === 'critical'),
+  );
   const plan = model ? buildPlan(model, DEFAULT_PLAN) : null;
   const totalN = sum(topics.map((t) => t.n));
 

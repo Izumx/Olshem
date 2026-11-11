@@ -87,7 +87,14 @@ export function estimateSlopes(cube: Cube): TopicSlope[] {
   });
 }
 
-export function buildModel(cube: Cube, slopes: TopicSlope[], edges: Edge[], means: number[], target: number): HoursModel | null {
+export function buildModel(
+  cube: Cube,
+  slopes: TopicSlope[],
+  edges: Edge[],
+  means: number[],
+  target: number,
+  weak: boolean[] = means.map((m) => m < target),
+): HoursModel | null {
   if (!slopes.length) return null;
   const T = cube.topics.length;
   const current: number[] = [];
@@ -110,6 +117,7 @@ export function buildModel(cube: Cube, slopes: TopicSlope[], edges: Edge[], mean
     observedMin,
     observedMax,
     target,
+    weak,
     edges: edges.map((e) => ({ from: index.get(e.from)!, to: index.get(e.to)!, rho: e.rho })),
   };
 }
@@ -133,7 +141,7 @@ export function forecast(model: HoursModel, hours: number[]): Forecast {
   const se = Math.sqrt(variance);
   const crit = 1.96;
   const gain = meanAfter - meanBefore;
-  const weak = model.means.flatMap((m, t) => (m < model.target ? [after[t] - m] : []));
+  const weak = model.means.flatMap((m, t) => (model.weak[t] ? [after[t] - m] : []));
   return {
     after,
     direct,
@@ -151,9 +159,7 @@ export function forecast(model: HoursModel, hours: number[]): Forecast {
  * "pays" for one weak topic by weakening another is not one a methodist can sign.
  */
 function bounds(model: HoursModel, options: PlanOptions) {
-  const isProtected = (t: number) =>
-    model.means[t] < model.target ||
-    model.edges.some((e) => e.from === t && model.means[e.to] < model.target);
+  const isProtected = (t: number) => model.weak[t] || model.edges.some((e) => e.from === t && model.weak[e.to]);
   const lo = model.current.map((h, t) =>
     isProtected(t)
       ? h

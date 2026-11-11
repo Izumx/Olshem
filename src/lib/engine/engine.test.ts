@@ -65,7 +65,9 @@ describe('demo: does the engine find the known answers?', () => {
   });
 
   it('never takes hours from a weak topic', () => {
-    for (const r of a.plan!.rows) if (r.before < 60) expect(r.delta).toBeGreaterThanOrEqual(0);
+    const hard = new Set(a.topics.filter((x) => x.level === 'hard' || x.level === 'critical').map((x) => x.id));
+    expect(hard.has('t11')).toBe(true);
+    for (const r of a.plan!.rows) if (r.before < 60 || hard.has(r.topicId)) expect(r.delta).toBeGreaterThanOrEqual(0);
   });
 
   it('finds the real dependencies and not unrelated ones', () => {
@@ -111,6 +113,19 @@ describe('demo: does the engine find the known answers?', () => {
     const base = a.model!.current.reduce((s, h) => s + h, 0);
     expect(buildPlan(a.model!, { ...DEFAULT_PLAN, extraHours: 4 }).total).toBe(base + 4);
     expect(buildPlan(a.model!, { ...DEFAULT_PLAN, extraHours: -4 }).total).toBe(base - 4);
+  });
+
+  it('stays consistent across every mastery threshold the UI offers', () => {
+    let prevHard = -1;
+    for (let level = 40; level <= 90; level += 5) {
+      const r = analyze(ds, { masteryThreshold: level });
+      const hard = r.topics.filter((x) => x.level === 'critical' || x.level === 'hard').length;
+      expect(hard).toBeGreaterThanOrEqual(prevHard);
+      prevHard = hard;
+      expect(r.topics.every((x) => x.masteredRate >= 0 && x.masteredRate <= 1)).toBe(true);
+      expect(r.plan!.total).toBe(a.plan!.total);
+      expect(r.plan!.rows.every((row) => Number.isFinite(row.after))).toBe(true);
+    }
   });
 });
 

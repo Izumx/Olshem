@@ -45,6 +45,7 @@ export default function Report() {
           <dl className="meta">
             <dt>{m.subject}</dt><dd>{analysis.title[lang]}</dd>
             <dt>{m.basis}</dt><dd>{t.scope(analysis.nSchools, analysis.nClasses, analysis.nStudents)}{analysis.source === 'demo' ? `. ${t.demoBanner}` : ''}</dd>
+            <dt>{m.threshold}</dt><dd>{m.thresholdValue(analysis.settings.masteryThreshold)}</dd>
           </dl>
 
           <h2>{m.decisions}</h2>
