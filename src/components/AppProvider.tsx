@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { analyze } from '@/lib/engine/analyze';
 import type { Analysis, Dataset, Lang } from '@/lib/engine/types';
 import { generateDemo } from '@/lib/demo/generate';
+import { loadDataset, saveDataset } from '@/lib/data/persist';
 import { bookLabel, messages, type Messages } from '@/lib/i18n';
 
 interface AppState {
@@ -23,7 +24,27 @@ const demo = generateDemo();
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('ru');
   const [uploaded, setUploaded] = useState<Dataset | null>(null);
+  const [restored, setRestored] = useState(false);
   const dataset = uploaded ?? demo;
+
+  // Bring back a file uploaded before a reload, before anything is shown,
+  // so the page never flashes the sample data first.
+  useEffect(() => {
+    let alive = true;
+    loadDataset().then((saved) => {
+      if (!alive) return;
+      if (saved) setUploaded(saved);
+      setRestored(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const setDataset = useCallback((d: Dataset | null) => {
+    setUploaded(d);
+    void saveDataset(d);
+  }, []);
 
   useEffect(() => {
     try {
@@ -56,14 +77,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLang,
       t: messages[lang],
       dataset,
-      setDataset: setUploaded,
+      setDataset,
       analysis,
       topicName: (id) => names.get(id) ?? id,
       book: (name) => bookLabel(name, lang),
     };
-  }, [lang, setLang, dataset, analysis]);
+  }, [lang, setLang, dataset, setDataset, analysis]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value}>{restored ? children : null}</AppContext.Provider>;
 }
 
 export function useApp(): AppState {
